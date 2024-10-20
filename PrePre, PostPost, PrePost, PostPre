@@ -1,0 +1,80 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+
+# Load the pre and post data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Ensure both arrays have the same shape by trimming them to the smallest common shape
+min_shape = min(pre.shape[1:], post.shape[1:])
+pre_trimmed = pre[:, :min_shape[0], :min_shape[1]]
+post_trimmed = post[:, :min_shape[0], :min_shape[1]]
+
+# Flatten the arrays (reshape them to 2D) for PCA
+pre_flattened = pre_trimmed.reshape(pre_trimmed.shape[0], -1)
+post_flattened = post_trimmed.reshape(post_trimmed.shape[0], -1)
+
+# Impute missing values if needed
+imputer = SimpleImputer(strategy='mean')
+pre_imputed = imputer.fit_transform(pre_flattened)
+post_imputed = imputer.fit_transform(post_flattened)
+
+# Apply PCA separately to pre and post data
+pca_pre = PCA(n_components=13)
+pca_post = PCA(n_components=13)
+
+# Fit PCA on the pre and post data
+pre_transformed = pca_pre.fit_transform(pre_imputed)
+post_transformed = pca_post.fit_transform(post_imputed)
+
+# Project Pre onto Pre
+pre_onto_pre = pca_pre.inverse_transform(pre_transformed)
+
+# Project Post onto Post
+post_onto_post = pca_post.inverse_transform(post_transformed)
+
+# Project Pre onto Post (using Post's PCA components)
+pre_onto_post = pca_post.inverse_transform(pca_post.transform(pre_imputed))
+
+# Project Post onto Pre (using Pre's PCA components)
+post_onto_pre = pca_pre.inverse_transform(pca_pre.transform(post_imputed))
+
+# Visualization
+
+# Figure 1: Project Pre onto Pre
+plt.figure(figsize=(10, 6))
+plt.scatter(pre_onto_pre[:, 0], pre_onto_pre[:, 1], color='b', alpha=0.5)
+plt.title("Projection: Pre onto Pre")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.grid(True)
+plt.show()
+
+# Figure 2: Project Post onto Post
+plt.figure(figsize=(10, 6))
+plt.scatter(post_onto_post[:, 0], post_onto_post[:, 1], color='orange', alpha=0.5)
+plt.title("Projection: Post onto Post")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.grid(True)
+plt.show()
+
+# Figure 3: Project Pre onto Post
+plt.figure(figsize=(10, 6))
+plt.scatter(pre_onto_post[:, 0], pre_onto_post[:, 1], color='green', alpha=0.5)
+plt.title("Projection: Pre onto Post")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.grid(True)
+plt.show()
+
+# Figure 4: Project Post onto Pre
+plt.figure(figsize=(10, 6))
+plt.scatter(post_onto_pre[:, 0], post_onto_pre[:, 1], color='purple', alpha=0.5)
+plt.title("Projection: Post onto Pre")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.grid(True)
+plt.show()
