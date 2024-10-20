@@ -1,0 +1,73 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+
+# Loading the arrays
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Ensure both arrays have the same shape by trimming them to the smallest common shape
+min_shape = min(pre.shape[1:], post.shape[1:])  # Find the minimum shape for dimension 1 and beyond
+
+# Trim both arrays to the same size
+pre_trimmed = pre[:, :min_shape[0], :min_shape[1]]
+post_trimmed = post[:, :min_shape[0], :min_shape[1]]
+
+# Flatten the arrays (reshape them to 2D) so we can apply PCA
+pre_flattened = pre_trimmed.reshape(pre_trimmed.shape[0], -1)  # (samples, features)
+post_flattened = post_trimmed.reshape(post_trimmed.shape[0], -1)
+
+# Combine the 'pre' and 'post' arrays for PCA
+combined = np.vstack([pre_flattened, post_flattened])
+
+# Check for NaN values
+print(f"NaN values before imputation: {np.isnan(combined).sum()}")
+
+# Impute NaN values with column means (instead of removing them)
+imputer = SimpleImputer(strategy='mean')
+filtered_combined = imputer.fit_transform(combined)
+
+# Apply PCA on the imputed data
+pca = PCA()
+pca.fit(filtered_combined)
+
+# Get the transformed data (projections onto the principal components)
+transformed_data = pca.transform(filtered_combined)
+
+# Plot the cumulative explained variance
+explained_variance = pca.explained_variance_ratio_
+plt.figure(figsize=(10, 6))
+plt.plot(np.cumsum(explained_variance), marker='o', linestyle='--', color='b')
+plt.title("Cumulative Explained Variance by Principal Components")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Explained Variance")
+plt.grid(True)
+plt.show()
+
+# Scatter plot of the first 2 principal components
+plt.figure(figsize=(10, 6))
+plt.scatter(transformed_data[:pre_flattened.shape[0], 0], 
+            transformed_data[:pre_flattened.shape[0], 1], 
+            color='blue', alpha=0.5, label='Pre')
+plt.scatter(transformed_data[pre_flattened.shape[0]:, 0], 
+            transformed_data[pre_flattened.shape[0]:, 1], 
+            color='orange', alpha=0.5, label='Post')
+plt.title("Scatter Plot of First Two Principal Components")
+plt.xlabel("PC 1")
+plt.ylabel("PC 2")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot the explained variance for each component
+plt.figure(figsize=(10, 6))
+plt.bar(range(1, len(explained_variance) + 1), explained_variance, alpha=0.7, label='Variance Explained')
+plt.title("Explained Variance by Each Principal Component")
+plt.xlabel("Principal Component")
+plt.ylabel("Variance Explained")
+plt.grid(True)
+plt.show()
+
+# Print the explained variance ratio for the first few principal components
+print("Explained variance by the first few principal components:", explained_variance[:5])
