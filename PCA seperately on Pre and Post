@@ -1,0 +1,68 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+
+# Load the pre and post data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Ensure both arrays have the same shape by trimming them to the smallest common shape
+min_shape = min(pre.shape[1:], post.shape[1:])
+pre_trimmed = pre[:, :min_shape[0], :min_shape[1]]
+post_trimmed = post[:, :min_shape[0], :min_shape[1]]
+
+# Flatten the arrays (reshape them to 2D) for PCA
+pre_flattened = pre_trimmed.reshape(pre_trimmed.shape[0], -1)
+post_flattened = post_trimmed.reshape(post_trimmed.shape[0], -1)
+
+# Impute missing values if needed (assuming mean imputation)
+imputer = SimpleImputer(strategy='mean')
+pre_imputed = imputer.fit_transform(pre_flattened)
+post_imputed = imputer.fit_transform(post_flattened)
+
+# Apply PCA separately to pre and post data
+pca_pre = PCA(n_components=13)  # Limit to first 13 components
+pca_post = PCA(n_components=13)  # Limit to first 13 components
+
+# Fit PCA on the pre and post data
+pre_transformed = pca_pre.fit_transform(pre_imputed)
+post_transformed = pca_post.fit_transform(post_imputed)
+
+# Explained variance
+pre_explained_variance = pca_pre.explained_variance_ratio_
+post_explained_variance = pca_post.explained_variance_ratio_
+
+# Figure 1: Cumulative explained variance for Pre and Post (comparison on the same graph)
+plt.figure(figsize=(10, 6))
+plt.plot(np.cumsum(pre_explained_variance), marker='o', linestyle='--', color='b', label='Pre')
+plt.plot(np.cumsum(post_explained_variance), marker='o', linestyle='--', color='orange', label='Post')
+plt.title("Cumulative Explained Variance by Principal Components (Pre vs Post)")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Explained Variance")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Figure 2: Explained variance by each component for Pre and Post (comparison on the same graph)
+plt.figure(figsize=(10, 6))
+plt.bar(range(1, 14), pre_explained_variance * 100, alpha=0.7, color='b', width=0.4, label='Pre', align='center')
+plt.bar(np.array(range(1, 14)) + 0.4, post_explained_variance * 100, alpha=0.7, color='orange', width=0.4, label='Post', align='center')
+plt.title("Explained Variance by Principal Components (Pre vs Post)")
+plt.xlabel("Principal Component")
+plt.ylabel("Variance Explained (%)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Figure 3: Scatter plot of the first two principal components for Pre and Post
+plt.figure(figsize=(10, 6))
+plt.scatter(pre_transformed[:, 0], pre_transformed[:, 1], color='b', label='Pre', alpha=0.5)
+plt.scatter(post_transformed[:, 0], post_transformed[:, 1], color='orange', label='Post', alpha=0.5)
+plt.title("Scatter Plot of First Two Principal Components")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.legend()
+plt.grid(True)
+plt.show()
