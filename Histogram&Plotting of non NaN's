@@ -1,0 +1,32 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Load your data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Create a mask to filter out NaN values
+mask = ~np.isnan(pre)
+
+# Extract values based on the mask
+outcome = pre[mask]  # This gives you a 1D array of all non-NaN values
+
+# Create a figure and axis for the plots
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+# Histogram
+ax[0].hist(outcome, bins=50, color='blue', alpha=0.7)
+ax[0].set_title('Histogram of Non-NaN Values')
+ax[0].set_xlabel('Value')
+ax[0].set_ylabel('Frequency')
+
+# Scatter Plot
+ax[1].scatter(np.arange(len(outcome)), outcome, color='green', alpha=0.5)
+ax[1].set_title('Scatter Plot of Non-NaN Values')
+ax[1].set_xlabel('Index')
+ax[1].set_ylabel('Value')
+
+# Show the plots
+plt.tight_layout()
+plt.show()
