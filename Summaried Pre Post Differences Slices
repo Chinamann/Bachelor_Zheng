@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load the pre and post arrays
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Compute the average of all slices along axis 0 (summarizing the entire 3D array)
+pre_avg = np.mean(pre, axis=0)
+post_avg = np.mean(post, axis=0)
+
+# Calculate the absolute difference between the two summarized arrays (pre_avg and post_avg)
+similarity = np.abs(pre_avg - post_avg)
+
+# Plot the similarity map
+plt.figure(figsize=(8, 6))
+plt.imshow(similarity, cmap='coolwarm')  # Using a diverging colormap to highlight differences
+plt.colorbar()
+plt.title("Similarity Between Pre and Post (Absolute Difference)")
+plt.show()
