@@ -1,0 +1,66 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Load data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+post = post[:108]  # Only use first 108 slices of post data
+
+# Handle NaN values by replacing with zero (assuming pre and post are already standardized)
+pre = np.nan_to_num(pre)
+post = np.nan_to_num(post)
+
+# Reshape to 2D (slices x flattened features)
+pre_reshaped = pre.reshape(pre.shape[0], -1)
+post_reshaped = post.reshape(post.shape[0], -1)
+
+# Apply PCA separately to pre and post, limiting to 13 components
+pca_pre = PCA(n_components=13)
+pca_post = PCA(n_components=13)
+
+pre_pca_result = pca_pre.fit_transform(pre_reshaped)
+post_pca_result = pca_post.fit_transform(post_reshaped)
+
+# Project Pre data onto its own PCA space
+pre_on_pre = pre_pca_result[:, :2]
+
+# Project Post data onto its own PCA space
+post_on_post = post_pca_result[:, :2]
+
+# Project Pre data into Post's PCA space
+pre_on_post = pca_post.transform(pre_reshaped)[:, :2]
+
+# Project Post data into Pre's PCA space
+post_on_pre = pca_pre.transform(post_reshaped)[:, :2]
+
+# Plotting
+fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+
+# Scatter plot of Pre data in Pre PCA space
+axs[0, 0].scatter(pre_on_pre[:, 0], pre_on_pre[:, 1], color='blue', alpha=0.5)
+axs[0, 0].set_title("Pre data in Pre PCA Space")
+axs[0, 0].set_xlabel("PC1")
+axs[0, 0].set_ylabel("PC2")
+
+# Scatter plot of Post data in Post PCA space
+axs[0, 1].scatter(post_on_post[:, 0], post_on_post[:, 1], color='red', alpha=0.5)
+axs[0, 1].set_title("Post data in Post PCA Space")
+axs[0, 1].set_xlabel("PC1")
+axs[0, 1].set_ylabel("PC2")
+
+# Scatter plot of Pre data in Post PCA space
+axs[1, 0].scatter(pre_on_post[:, 0], pre_on_post[:, 1], color='green', alpha=0.5)
+axs[1, 0].set_title("Pre data in Post PCA Space")
+axs[1, 0].set_xlabel("PC1")
+axs[1, 0].set_ylabel("PC2")
+
+# Scatter plot of Post data in Pre PCA space
+axs[1, 1].scatter(post_on_pre[:, 0], post_on_pre[:, 1], color='purple', alpha=0.5)
+axs[1, 1].set_title("Post data in Pre PCA Space")
+axs[1, 1].set_xlabel("PC1")
+axs[1, 1].set_ylabel("PC2")
+
+plt.tight_layout()
+plt.show()
