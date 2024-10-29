@@ -1,0 +1,70 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Load data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+post = post[:108]  # Only use first 108 slices of post data
+
+# Handle NaN values by imputing with the column mean
+pre = np.nan_to_num(pre)
+post = np.nan_to_num(post)
+
+# Reshape to 2D (slices x flattened features)
+pre_reshaped = pre.reshape(pre.shape[0], -1)
+post_reshaped = post.reshape(post.shape[0], -1)
+
+# Apply PCA separately to pre and post, limiting to 13 components
+pca_pre = PCA(n_components=13)
+pca_post = PCA(n_components=13)
+
+pre_pca_result = pca_pre.fit_transform(pre_reshaped)
+post_pca_result = pca_post.fit_transform(post_reshaped)
+
+# Plotting individual figures for top 5 components of pre and post data
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+for i in range(5):
+    axs[0, i].plot(pre_pca_result[:, i], color='blue')
+    axs[0, i].set_title(f'Pre PC{i+1}')
+    axs[0, i].set_xlabel("Time Index")
+    axs[0, i].set_ylabel("Component Value")
+
+    axs[1, i].plot(post_pca_result[:, i], color='orange')
+    axs[1, i].set_title(f'Post PC{i+1}')
+    axs[1, i].set_xlabel("Time Index")
+    axs[1, i].set_ylabel("Component Value")
+
+plt.tight_layout()
+plt.show()
+"""
+# Option 1: Variance Explained Bar Plot
+explained_variance_pre = pca_pre.explained_variance_ratio_
+explained_variance_post = pca_post.explained_variance_ratio_
+
+plt.figure(figsize=(8, 5))
+plt.bar(range(1, 14), explained_variance_pre[:13], alpha=0.6, label="Pre", color='blue')
+plt.bar(range(1, 14), explained_variance_post[:13], alpha=0.6, label="Post", color='orange')
+plt.xlabel('Principal Component')
+plt.ylabel('Explained Variance Ratio')
+plt.legend()
+plt.title('Variance Explained by Principal Components')
+plt.show()
+
+# Option 2: Cumulative Variance Plot
+cumulative_variance_pre = np.cumsum(pca_pre.explained_variance_ratio_)
+cumulative_variance_post = np.cumsum(pca_post.explained_variance_ratio_)
+
+plt.figure(figsize=(8, 5))
+plt.plot(range(1, 14), cumulative_variance_pre[:13], label="Pre", marker='o', color='blue')
+plt.plot(range(1, 14), cumulative_variance_post[:13], label="Post", marker='o', color='orange')
+plt.xlabel('Number of Principal Components')
+plt.ylabel('Cumulative Explained Variance')
+plt.legend()
+plt.title('Cumulative Variance Explained by PCA')
+#plt.show()
+"""
+
+plt.tight_layout()
+plt.show()
