@@ -1,0 +1,52 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+
+# Load your data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Trim post to match pre's slice count if necessary (only first 108 slices)
+post = post[:108]
+
+# Reshape data into 2D arrays (samples, features) for PCA
+pre_reshaped = pre.reshape(pre.shape[0], -1)
+post_reshaped = post.reshape(post.shape[0], -1)
+
+# Handle NaN values by imputing with the column mean
+imputer = SimpleImputer(strategy='mean')
+pre_imputed = imputer.fit_transform(pre_reshaped)
+post_imputed = imputer.fit_transform(post_reshaped)
+
+# Apply PCA to pre and post data separately, keeping only the first five principal components
+pca_pre = PCA(n_components=5)
+pre_pca_result = pca_pre.fit_transform(pre_imputed)
+
+pca_post = PCA(n_components=5)
+post_pca_result = pca_post.fit_transform(post_imputed)
+
+# Plot PC1 to PC5 for pre data
+fig, axs = plt.subplots(5, 1, figsize=(10, 15), sharex=True)
+for i in range(5):
+    axs[i].plot(pre_pca_result[:, i], color='blue', alpha=0.7)
+    axs[i].set_title(f'Pre Data - PC{i + 1} Sample Index')
+    axs[i].set_ylabel(f'PC{i + 1} Magnitude')
+    axs[i].grid(True)
+
+axs[-1].set_xlabel('Sample Index')
+plt.tight_layout()
+plt.show()
+
+# Plot PC1 to PC5 for post data
+fig, axs = plt.subplots(5, 1, figsize=(10, 15), sharex=True)
+for i in range(5):
+    axs[i].plot(post_pca_result[:, i], color='green', alpha=0.7)
+    axs[i].set_title(f'Post Data -PC{i + 1} Sample Index')
+    axs[i].set_ylabel(f'PC{i + 1} Magnitude')
+    axs[i].grid(True)
+
+axs[-1].set_xlabel('Sample Index')
+plt.tight_layout()
+plt.show()
