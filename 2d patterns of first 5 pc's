@@ -1,0 +1,46 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Load the data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+post = post[:108]  # Limit post to first 108 slices if needed
+
+# Mask to select non-NaN elements in a 2D slice (assumes all slices have the same NaN pattern)
+roi_mask = ~np.isnan(pre[0])
+
+# Flatten masked data, replacing NaNs with zero for PCA compatibility
+pre_flat = np.nan_to_num(pre).reshape(pre.shape[0], -1)
+post_flat = np.nan_to_num(post).reshape(post.shape[0], -1)
+
+# Apply PCA to obtain the first 5 components
+n_components = 5
+pca_pre = PCA(n_components=n_components)
+pre_pca_result = pca_pre.fit_transform(pre_flat)
+
+pca_post = PCA(n_components=n_components)
+post_pca_result = pca_post.fit_transform(post_flat)
+
+# Initialize empty arrays to place each PC component back into the 2D structure
+components2d_pre = np.empty((n_components,) + roi_mask.shape) * np.nan
+components2d_post = np.empty((n_components,) + roi_mask.shape) * np.nan
+
+# Map each principal component back into the 2D mask shape
+for i in range(n_components):
+    components2d_pre[i, roi_mask] = pca_pre.components_[i, roi_mask.flatten()]
+    components2d_post[i, roi_mask] = pca_post.components_[i, roi_mask.flatten()]
+
+# Plot each component as a 2D spatial pattern for both pre and post data
+fig, axs = plt.subplots(2, n_components, figsize=(15, 6))
+for i in range(n_components):
+    axs[0, i].imshow(components2d_pre[i, :, :], cmap='coolwarm', aspect='auto')
+    axs[0, i].set_title(f'Pre PC{i+1}')
+    axs[0, i].axis('off')
+    
+    axs[1, i].imshow(components2d_post[i, :, :], cmap='coolwarm', aspect='auto')
+    axs[1, i].set_title(f'Post PC{i+1}')
+    axs[1, i].axis('off')
+
+plt.tight_layout()
+plt.show()
