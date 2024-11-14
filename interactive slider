@@ -1,0 +1,52 @@
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+
+# Load and preprocess the data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+pre = np.nan_to_num(pre)
+post = np.nan_to_num(post)
+
+# Define the maximum number of slices for the slider
+max_slice = min(pre.shape[0], post.shape[0]) - 1  # Common max slices
+
+# Initialize the plot
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+plt.subplots_adjust(bottom=0.2)  # Adjust bottom space for the slider
+
+# Display the initial slice
+slice_index = 0
+pre_display = axes[0].imshow(pre[slice_index], cmap="gray")
+post_display = axes[1].imshow(post[slice_index], cmap="gray")
+
+# Titles for each subplot
+axes[0].set_title("Pre Data - Slice 1")
+axes[1].set_title("Post Data - Slice 1")
+
+# Hide axes for cleaner visualization
+axes[0].axis('off')
+axes[1].axis('off')
+
+# Add a slider for selecting the slice
+ax_slider = plt.axes([0.25, 0.1, 0.5, 0.03], facecolor="lightgoldenrodyellow")
+slice_slider = Slider(ax_slider, "Slice", 0, max_slice, valinit=0, valstep=1)
+
+# Update function for the slider
+def update(val):
+    slice_idx = int(slice_slider.val)
+    pre_display.set_data(pre[slice_idx])
+    post_display.set_data(post[slice_idx])
+
+    # Update titles with current slice number
+    axes[0].set_title(f"Pre Data - Slice {slice_idx + 1}")
+    axes[1].set_title(f"Post Data - Slice {slice_idx + 1}")
+    
+    fig.canvas.draw_idle()  # Redraw the figure with the new data
+
+# Connect the slider to the update function
+slice_slider.on_changed(update)
+
+plt.show()
