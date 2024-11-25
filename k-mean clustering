@@ -1,0 +1,83 @@
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+
+
+# Load the data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Preprocess data by replacing NaNs with zero
+pre = np.nan_to_num(pre)
+post = np.nan_to_num(post)
+
+# Reshape the data so that each pattern becomes a row with flattened features
+pre_reshaped = pre.reshape(pre.shape[0], -1)  # (patterns, flattened_features)
+post_reshaped = post.reshape(post.shape[0], -1)
+
+# K-Means clustering
+n_clusters = 4  # Number of clusters
+kmeans_pre = KMeans(n_clusters=n_clusters, random_state=42).fit(pre_reshaped)
+kmeans_post = KMeans(n_clusters=n_clusters, random_state=42).fit(post_reshaped)
+
+pre_labels = kmeans_pre.labels_  # Cluster labels for pre
+post_labels = kmeans_post.labels_  # Cluster labels for post
+
+# Dimensionality reduction using PCA for visualization
+pca_pre = PCA(n_components=2)  # Reduce to 2D
+pca_post = PCA(n_components=2)
+
+pre_pca = pca_pre.fit_transform(pre_reshaped)
+post_pca = pca_post.fit_transform(post_reshaped)
+
+
+# Combined scatter plot for pre and post data
+fig, ax = plt.subplots(figsize=(10, 8))
+
+# Plot pre data
+for i in range(n_clusters):
+    cluster_points = pre_pca[pre_labels == i]
+    ax.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f"Pre Cluster {i+1}", alpha=0.7)
+
+# Plot post data
+for i in range(n_clusters):
+    cluster_points = post_pca[post_labels == i]
+    ax.scatter(cluster_points[:, 0], cluster_points[:, 1], marker='x', label=f"Post Cluster {i+1}", alpha=0.7)
+
+ax.set_title("K-Means Clustering: Pre and Post Data Combined", fontsize=14)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.legend(loc='best')
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+# Separate scatter plots for pre and post data
+fig, axs = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+
+# Pre data scatter
+for i in range(n_clusters):
+    cluster_points = pre_pca[pre_labels == i]
+    axs[0].scatter(cluster_points[:, 0], cluster_points[:, 1], label=f"Cluster {i+1}", alpha=0.7)
+
+axs[0].set_title("Pre Data - K-Means Clustering", fontsize=14)
+axs[0].set_xlabel("")
+axs[0].set_ylabel("")
+axs[0].legend()
+axs[0].grid()
+
+# Post data scatter
+for i in range(n_clusters):
+    cluster_points = post_pca[post_labels == i]
+    axs[1].scatter(cluster_points[:, 0], cluster_points[:, 1], label=f"Cluster {i+1}", alpha=0.7, marker='x')
+
+axs[1].set_title("Post Data - K-Means Clustering", fontsize=14)
+axs[1].set_xlabel("")
+axs[1].legend()
+axs[1].grid()
+
+plt.tight_layout()
+plt.show()
