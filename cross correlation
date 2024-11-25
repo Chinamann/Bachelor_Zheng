@@ -1,0 +1,34 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import seaborn as sns
+
+# Load the data
+pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108])  # Trim post to 108 slices
+
+# Flatten the data for PCA
+pre_flat = pre.reshape(pre.shape[0], -1)
+post_flat = post.reshape(post.shape[0], -1)
+
+# Apply PCA to obtain the first 13 components for both pre and post data
+n_components = 13
+pca_pre = PCA(n_components)
+pre_pca_result = pca_pre.fit_transform(pre_flat)
+
+pca_post = PCA(n_components)
+post_pca_result = pca_post.fit_transform(post_flat)
+
+# Calculate the cross-correlation matrix between pre and post PCA components
+cross_corr_matrix = np.corrcoef(pre_pca_result.T, post_pca_result.T)[:n_components, n_components:]
+
+# Plot the cross-correlation matrix as a heatmap
+plt.figure(figsize=(8, 6))
+sns.heatmap(cross_corr_matrix, annot=True, cmap='coolwarm', center=0, fmt=".2f",
+            xticklabels=[f'Post PC{i+1}' for i in range(n_components)],
+            yticklabels=[f'Pre PC{i+1}' for i in range(n_components)])
+plt.title("Cross-Correlation of Principal Components between Pre and Post")
+plt.xlabel("Post Principal Components")
+plt.ylabel("Pre Principal Components")
+plt.show()
