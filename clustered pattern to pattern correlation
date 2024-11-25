@@ -1,0 +1,52 @@
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.cluster.hierarchy import linkage, leaves_list
+
+# Load the data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Preprocess data by replacing NaNs with zero
+pre = np.nan_to_num(pre)
+post = np.nan_to_num(post)
+
+# Reshape the data so that each pattern becomes a row with flattened features
+pre_reshaped = pre.reshape(pre.shape[0], -1)
+post_reshaped = post.reshape(post.shape[0], -1)
+
+# Calculate the correlation matrices
+pre_corr_matrix = np.corrcoef(pre_reshaped)  # Correlate across patterns (rows)
+post_corr_matrix = np.corrcoef(post_reshaped)  # Same for post data
+
+# Perform hierarchical clustering to order the patterns
+pre_linkage = linkage(pre_corr_matrix, method='ward')  # Hierarchical clustering for pre
+post_linkage = linkage(post_corr_matrix, method='ward')  # Hierarchical clustering for post
+
+pre_order = leaves_list(pre_linkage)  # Get the order of patterns for pre
+post_order = leaves_list(post_linkage)  # Get the order of patterns for post
+
+# Reorder the correlation matrices based on clustering
+pre_corr_matrix_sorted = pre_corr_matrix[np.ix_(pre_order, pre_order)]
+post_corr_matrix_sorted = post_corr_matrix[np.ix_(post_order, post_order)]
+
+# Plot heatmaps for sorted correlation matrices
+fig, axs = plt.subplots(1, 2, figsize=(15, 7))
+
+# Pre data sorted
+sns.heatmap(pre_corr_matrix_sorted, cmap="coolwarm", annot=False, cbar=True, ax=axs[0], square=True)
+axs[0].set_title('Pre Data - Pattern Correlation (Clustered)')
+axs[0].set_xlabel('Pattern Index (Clustered)')
+axs[0].set_ylabel('Pattern Index (Clustered)')
+
+# Post data sorted
+sns.heatmap(post_corr_matrix_sorted, cmap="coolwarm", annot=False, cbar=True, ax=axs[1], square=True)
+axs[1].set_title('Post Data - Pattern Correlation (Clustered)')
+axs[1].set_xlabel('Pattern Index (Clustered)')
+axs[1].set_ylabel('Pattern Index (Clustered)')
+
+plt.tight_layout()
+plt.show()
+
