@@ -1,0 +1,64 @@
+
+import numpy as np
+from sklearn.decomposition import PCA
+from scipy.stats import ttest_ind
+
+# Load the data
+pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108])  # Match dimensions
+
+# Flatten the data for PCA
+pre_flat = pre.reshape(pre.shape[0], -1)
+post_flat = post.reshape(post.shape[0], -1)
+
+# Function to calculate effective dimensionality
+def calculate_effective_dimensionality(variances):
+    numerator = np.sum(variances) ** 2
+    denominator = np.sum(variances ** 2)
+    return numerator / denominator
+
+# Function to bootstrap dimensionality
+def bootstrap_dimensionality(data, n_samples=100):
+    # Randomly select patterns with replacement
+    sample_indices = np.random.choice(data.shape[0], size=n_samples, replace=True)
+    sample_data = data[sample_indices]
+    # Perform PCA and compute dimensionality
+    pca = PCA()
+    pca.fit(sample_data)
+    variances = pca.explained_variance_
+    return calculate_effective_dimensionality(variances)
+
+# Perform bootstrapping
+n_iterations = 100
+n_samples = 100
+dimensionalities_pre = []
+dimensionalities_post = []
+
+for _ in range(n_iterations):
+    dim_pre = bootstrap_dimensionality(pre_flat, n_samples=n_samples)
+    dim_post = bootstrap_dimensionality(post_flat, n_samples=n_samples)
+    dimensionalities_pre.append(dim_pre)
+    dimensionalities_post.append(dim_post)
+
+# Statistical Test
+t_stat, p_value = ttest_ind(dimensionalities_pre, dimensionalities_post)
+
+# Display Results
+print(f"T-Statistic: {t_stat}")
+print(f"P-Value: {p_value}")
+if p_value < 0.05:
+    print("The dimensionalities of pre and post datasets are significantly different.")
+else:
+    print("The dimensionalities of pre and post datasets are not significantly different.")
+
+# Visualization of bootstrapped dimensionalities
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.histplot(dimensionalities_pre, color='blue', label='Pre Data', kde=True, stat='density')
+sns.histplot(dimensionalities_post, color='orange', label='Post Data', kde=True, stat='density')
+plt.title("Bootstrapped Dimensionalities")
+plt.xlabel("Effective Dimensionality")
+plt.ylabel("Density")
+plt.legend()
+plt.show()
