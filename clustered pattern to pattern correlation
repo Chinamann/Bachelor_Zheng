@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,6 +19,7 @@ post_reshaped = post.reshape(post.shape[0], -1)
 # Calculate the correlation matrices
 pre_corr_matrix = np.corrcoef(pre_reshaped)  # Correlate across patterns (rows)
 post_corr_matrix = np.corrcoef(post_reshaped)  # Same for post data
+cross_corr_pre_post = np.corrcoef(pre_reshaped, post_reshaped)[:pre_reshaped.shape[0], pre_reshaped.shape[0]:]
 
 # Perform hierarchical clustering to order the patterns
 pre_linkage = linkage(pre_corr_matrix, method='ward')  # Hierarchical clustering for pre
@@ -31,22 +31,38 @@ post_order = leaves_list(post_linkage)  # Get the order of patterns for post
 # Reorder the correlation matrices based on clustering
 pre_corr_matrix_sorted = pre_corr_matrix[np.ix_(pre_order, pre_order)]
 post_corr_matrix_sorted = post_corr_matrix[np.ix_(post_order, post_order)]
+cross_corr_pre_post_sorted = cross_corr_pre_post[np.ix_(pre_order, post_order)]
 
-# Plot heatmaps for sorted correlation matrices
-fig, axs = plt.subplots(1, 2, figsize=(15, 7))
+# Create a combined 2x2 grid correlation matrix
+top_left = pre_corr_matrix_sorted
+top_right = cross_corr_pre_post_sorted
+bottom_left = cross_corr_pre_post_sorted.T
+bottom_right = post_corr_matrix_sorted
 
-# Pre data sorted
-sns.heatmap(pre_corr_matrix_sorted, cmap="coolwarm", annot=False, cbar=True, ax=axs[0], square=True)
-axs[0].set_title('Pre Data - Pattern Correlation (Clustered)')
-axs[0].set_xlabel('Pattern Index (Clustered)')
-axs[0].set_ylabel('Pattern Index (Clustered)')
+# Concatenate the matrices to form a 2x2 grid
+top = np.hstack([top_left, top_right])
+bottom = np.hstack([bottom_left, bottom_right])
+combined_matrix = np.vstack([top, bottom])
 
-# Post data sorted
-sns.heatmap(post_corr_matrix_sorted, cmap="coolwarm", annot=False, cbar=True, ax=axs[1], square=True)
-axs[1].set_title('Post Data - Pattern Correlation (Clustered)')
-axs[1].set_xlabel('Pattern Index (Clustered)')
-axs[1].set_ylabel('Pattern Index (Clustered)')
+# Plot the combined matrix
+fig, ax = plt.subplots(figsize=(10, 8))  # Adjusted figure size
 
+sns.heatmap(combined_matrix, cmap="coolwarm", annot=False, cbar=True, ax=ax, square=True)
+
+# Add dividing lines for visual separation
+ax.axhline(top_left.shape[0], color='black', linewidth=2)
+ax.axvline(top_left.shape[1], color='black', linewidth=2)
+
+# Add external titles for the quadrants
+ax.text(-15, top_left.shape[0] / 2, 'Pre', va='center', ha='center', fontsize=12, weight='bold', color='black', rotation=90)  # On left of upper left square
+ax.text(-15, top_left.shape[0] + bottom_left.shape[0] / 2, 'Post', va='center', ha='center', fontsize=12, weight='bold', color='black', rotation=90)  # On left of bottom left square
+
+# Add external titles for the top
+ax.text(top_left.shape[1] / 2, -5, 'Pre', ha='center', fontsize=12, weight='bold', color='black')  # Above upper left square
+ax.text(3 * top_left.shape[1] / 2, -5, 'Post', ha='center', fontsize=12, weight='bold', color='black')  # Above upper right square
+
+# Adjust layout and show plot
 plt.tight_layout()
 plt.show()
+
 
