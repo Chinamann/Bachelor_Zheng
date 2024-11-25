@@ -1,0 +1,33 @@
+
+import numpy as np
+from sklearn.decomposition import PCA
+
+# Load the data
+pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108])  # Match dimensions
+
+# Flatten the data for PCA
+pre_flat = pre.reshape(pre.shape[0], -1)
+post_flat = post.reshape(post.shape[0], -1)
+
+# Apply PCA
+pca_pre = PCA()
+pca_pre.fit(pre_flat)
+pre_variances = pca_pre.explained_variance_
+
+pca_post = PCA()
+pca_post.fit(post_flat)
+post_variances = pca_post.explained_variance_
+
+# Calculate effective dimensionality
+def calculate_effective_dimensionality(variances):
+    numerator = np.sum(variances) ** 2
+    denominator = np.sum(variances ** 2)
+    return numerator / denominator
+
+# Calculate for pre and post data
+d_eff_pre = calculate_effective_dimensionality(pre_variances)
+d_eff_post = calculate_effective_dimensionality(post_variances)
+
+print(f"Effective Dimensionality (Pre): {d_eff_pre}")
+print(f"Effective Dimensionality (Post): {d_eff_post}")
