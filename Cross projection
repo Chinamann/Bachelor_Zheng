@@ -1,0 +1,64 @@
+
+import numpy as np
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+# Load the data
+pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy"))
+
+# Flatten the data for PCA
+pre_flat = pre.reshape(pre.shape[0], -1)
+post_flat = post.reshape(post.shape[0], -1)
+
+# Perform PCA on pre and post data
+n_components = 13
+pca_pre = PCA(n_components=n_components)
+pre_pca_result = pca_pre.fit_transform(pre_flat)
+pre_pcs = pca_pre.components_  # Principal components of pre
+
+pca_post = PCA(n_components=n_components)
+post_pca_result = pca_post.fit_transform(post_flat)
+post_pcs = pca_post.components_  # Principal components of post
+
+# Cross-projection
+pre_to_post_proj = np.dot(pre_flat, post_pcs.T)  # Pre data onto post PCs
+post_to_pre_proj = np.dot(post_flat, pre_pcs.T)  # Post data onto pre PCs
+
+# Cumulative variance explained by cross-projections
+pre_to_post_var = np.var(pre_to_post_proj, axis=0)
+post_to_pre_var = np.var(post_to_pre_proj, axis=0)
+pre_to_post_cumulative_var = np.cumsum(pre_to_post_var) / np.sum(pre_to_post_var)
+post_to_pre_cumulative_var = np.cumsum(post_to_pre_var) / np.sum(post_to_pre_var)
+
+# Plot cumulative variance explained
+plt.figure(figsize=(12, 6))
+plt.plot(range(1, n_components + 1), pre_to_post_cumulative_var, label="Pre to Post", marker="o", color="blue")
+plt.plot(range(1, n_components + 1), post_to_pre_cumulative_var, label="Post to Pre", marker="o", color="orange")
+plt.title("Cumulative Variance Explained by Cross-Projections")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Variance Explained")
+plt.xticks(range(1, n_components + 1))
+plt.legend()
+plt.grid()
+plt.show()
+
+# Visualize the cross-products
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# Pre-to-Post Projection Cross Product
+axes[0].imshow(pre_to_post_proj, aspect='auto', cmap='coolwarm')
+axes[0].set_title("Pre Data Projected onto Post PCs")
+axes[0].set_xlabel("Post Principal Components")
+axes[0].set_ylabel("Pre Patterns")
+axes[0].colorbar = plt.colorbar(axes[0].images[0], ax=axes[0])
+
+# Post-to-Pre Projection Cross Product
+axes[1].imshow(post_to_pre_proj, aspect='auto', cmap='coolwarm')
+axes[1].set_title("Post Data Projected onto Pre PCs")
+axes[1].set_xlabel("Pre Principal Components")
+axes[1].set_ylabel("Post Patterns")
+axes[1].colorbar = plt.colorbar(axes[1].images[0], ax=axes[1])
+
+plt.tight_layout()
+plt.show()
