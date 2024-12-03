@@ -15,11 +15,11 @@ post_flat = post.reshape(post.shape[0], -1)
 n_components = 13
 pca_pre = PCA(n_components=n_components)
 pre_pca_result = pca_pre.fit_transform(pre_flat)
-pre_pcs = pca_pre.components_  # Principal components of pre
+pre_pcs = pca_pre.components_
 
 pca_post = PCA(n_components=n_components)
 post_pca_result = pca_post.fit_transform(post_flat)
-post_pcs = pca_post.components_  # Principal components of post
+post_pcs = pca_post.components_
 
 # Cross-projection: Pre-to-Post and Post-to-Pre
 pre_to_post_proj = np.dot(pre_flat, post_pcs.T)
@@ -35,59 +35,56 @@ pre_to_pre_var = np.var(pre_to_pre_proj, axis=0)
 post_to_pre_var = np.var(post_to_pre_proj, axis=0)
 post_to_post_var = np.var(post_to_post_proj, axis=0)
 
-# Cumulative Variance
-pre_to_post_cumulative_var = np.cumsum(pre_to_post_var) / np.sum(pre_to_post_var)
-pre_to_pre_cumulative_var = np.cumsum(pre_to_pre_var) / np.sum(pre_to_pre_var)
-post_to_pre_cumulative_var = np.cumsum(post_to_pre_var) / np.sum(post_to_pre_var)
-post_to_post_cumulative_var = np.cumsum(post_to_post_var) / np.sum(post_to_post_var)
+# Compute cumulative variance as a percentage of total variance across all dimensions
+total_variance_pre = np.sum(np.var(pre_flat, axis=0))
+total_variance_post = np.sum(np.var(post_flat, axis=0))
 
-# ** Plotting Cumulative Variance **
+pre_to_pre_cumulative_percent_global = np.cumsum(pre_to_pre_var) / total_variance_pre * 100
+pre_to_post_cumulative_percent_global = np.cumsum(pre_to_post_var) / total_variance_pre * 100
+post_to_pre_cumulative_percent_global = np.cumsum(post_to_pre_var) / total_variance_post * 100
+post_to_post_cumulative_percent_global = np.cumsum(post_to_post_var) / total_variance_post * 100
 
-# Pre onto Pre and Post (Cumulative)
+# ** Plotting Cumulative Variance Globally **
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), pre_to_pre_cumulative_var, label="Pre to Pre", marker="o", color="green")
-plt.plot(range(1, n_components + 1), pre_to_post_cumulative_var, label="Pre to Post", marker="o", color="blue")
-plt.title("Cumulative Variance: Pre Patterns Projected onto Pre and Post PCs")
-plt.xlabel("Pre Patterns (Number of Principal Components)")
-plt.ylabel("Cumulative Variance Explained")
+plt.plot(range(1, n_components + 1), pre_to_pre_cumulative_percent_global, label="Pre to Pre", marker="o", color="green")
+plt.plot(range(1, n_components + 1), pre_to_post_cumulative_percent_global, label="Pre to Post", marker="o", color="blue")
+plt.title("Cumulative Variance: Pre Patterns Projected onto Pre and Post PCs (Global)")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
 plt.legend()
 plt.grid()
 plt.show()
 
-# Post onto Pre and Post (Cumulative)
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), post_to_post_cumulative_var, label="Post to Post", marker="o", color="red")
-plt.plot(range(1, n_components + 1), post_to_pre_cumulative_var, label="Post to Pre", marker="o", color="orange")
-plt.title("Cumulative Variance: Post Patterns Projected onto Pre and Post PCs")
-plt.xlabel("Post Patterns (Number of Principal Components)")
-plt.ylabel("Cumulative Variance Explained")
+plt.plot(range(1, n_components + 1), post_to_post_cumulative_percent_global, label="Post to Post", marker="o", color="red")
+plt.plot(range(1, n_components + 1), post_to_pre_cumulative_percent_global, label="Post to Pre", marker="o", color="orange")
+plt.title("Cumulative Variance: Post Patterns Projected onto Pre and Post PCs (Global)")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
 plt.legend()
 plt.grid()
 plt.show()
 
 # ** Plotting Normal Variance **
-
-# Pre onto Pre and Post (Normal Variance)
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), pre_to_pre_var, label="Pre to Pre", marker="o", color="green", linestyle='--')
-plt.plot(range(1, n_components + 1), pre_to_post_var, label="Pre to Post", marker="o", color="blue", linestyle='--')
-plt.title("Normal Variance: Pre Patterns Projected onto Pre and Post PCs")
-plt.xlabel("Pre Patterns (Number of Principal Components)")
-plt.ylabel("Variance Explained")
+plt.plot(range(1, n_components + 1), pre_to_pre_var / total_variance_pre * 100, label="Pre to Pre", marker="o", color="green", linestyle='--')
+plt.plot(range(1, n_components + 1), pre_to_post_var / total_variance_pre * 100, label="Pre to Post", marker="o", color="blue", linestyle='--')
+plt.title("Normal Variance: Pre Patterns Projected onto Pre and Post PCs (Global)")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
 plt.legend()
 plt.grid()
 plt.show()
 
-# Post onto Pre and Post (Normal Variance)
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), post_to_post_var, label="Post to Post", marker="o", color="red", linestyle='--')
-plt.plot(range(1, n_components + 1), post_to_pre_var, label="Post to Pre", marker="o", color="orange", linestyle='--')
-plt.title("Normal Variance: Post Patterns Projected onto Pre and Post PCs")
-plt.xlabel("Post Patterns (Number of Principal Components)")
-plt.ylabel("Variance Explained")
+plt.plot(range(1, n_components + 1), post_to_post_var / total_variance_post * 100, label="Post to Post", marker="o", color="red", linestyle='--')
+plt.plot(range(1, n_components + 1), post_to_pre_var / total_variance_post * 100, label="Post to Pre", marker="o", color="orange", linestyle='--')
+plt.title("Normal Variance: Post Patterns Projected onto Pre and Post PCs (Global)")
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
 plt.legend()
 plt.grid()
