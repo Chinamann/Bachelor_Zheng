@@ -11,44 +11,54 @@ post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/eve
 pre_flat = pre.reshape(pre.shape[0], -1)
 post_flat = post.reshape(post.shape[0], -1)
 
-# Perform PCA on pre and post data
+# Bootstrapping function
+def bootstrap_pca(data, n_samples, n_iterations, n_components):
+    avg_variance = np.zeros((n_iterations, n_components))
+    for i in range(n_iterations):
+        sample_indices = np.random.choice(data.shape[0], size=n_samples, replace=True)
+        sample_data = data[sample_indices]
+        pca = PCA(n_components=n_components)
+        pca.fit(sample_data)
+        avg_variance[i] = pca.explained_variance_
+    return avg_variance.mean(axis=0)
+
+# Perform PCA with bootstrapping
 n_components = 13
-pca_pre = PCA(n_components=n_components)
-pre_pca_result = pca_pre.fit_transform(pre_flat)
-pre_pcs = pca_pre.components_
+n_iterations = 100
+n_samples = 100
 
-pca_post = PCA(n_components=n_components)
-post_pca_result = pca_post.fit_transform(post_flat)
-post_pcs = pca_post.components_
+pre_pcs_var = bootstrap_pca(pre_flat, n_samples, n_iterations, n_components)
+post_pcs_var = bootstrap_pca(post_flat, n_samples, n_iterations, n_components)
 
-# Cross-projection: Pre-to-Post and Post-to-Pre
-pre_to_post_proj = np.dot(pre_flat, post_pcs.T)
-post_to_pre_proj = np.dot(post_flat, pre_pcs.T)
+# Calculate cross-projections
+pre_to_post_proj = np.dot(pre_flat, PCA(n_components=n_components).fit(post_flat).components_.T)
+post_to_pre_proj = np.dot(post_flat, PCA(n_components=n_components).fit(pre_flat).components_.T)
 
 # Self-projections
-pre_to_pre_proj = np.dot(pre_flat, pre_pcs.T)
-post_to_post_proj = np.dot(post_flat, post_pcs.T)
+pre_to_pre_proj = np.dot(pre_flat, PCA(n_components=n_components).fit(pre_flat).components_.T)
+post_to_post_proj = np.dot(post_flat, PCA(n_components=n_components).fit(post_flat).components_.T)
 
-# Variance Calculation
+# Variance calculations
 pre_to_post_var = np.var(pre_to_post_proj, axis=0)
 pre_to_pre_var = np.var(pre_to_pre_proj, axis=0)
 post_to_pre_var = np.var(post_to_pre_proj, axis=0)
 post_to_post_var = np.var(post_to_post_proj, axis=0)
 
-# Compute cumulative variance as a percentage of total variance across all dimensions
+# Global variance normalization
 total_variance_pre = np.sum(np.var(pre_flat, axis=0))
 total_variance_post = np.sum(np.var(post_flat, axis=0))
 
-pre_to_pre_cumulative_percent_global = np.cumsum(pre_to_pre_var) / total_variance_pre * 100
-pre_to_post_cumulative_percent_global = np.cumsum(pre_to_post_var) / total_variance_pre * 100
-post_to_pre_cumulative_percent_global = np.cumsum(post_to_pre_var) / total_variance_post * 100
-post_to_post_cumulative_percent_global = np.cumsum(post_to_post_var) / total_variance_post * 100
+# Cumulative variance percentages
+pre_to_pre_cumulative_percent = np.cumsum(pre_to_pre_var) / total_variance_pre * 100
+pre_to_post_cumulative_percent = np.cumsum(pre_to_post_var) / total_variance_pre * 100
+post_to_pre_cumulative_percent = np.cumsum(post_to_pre_var) / total_variance_post * 100
+post_to_post_cumulative_percent = np.cumsum(post_to_post_var) / total_variance_post * 100
 
-# ** Plotting Cumulative Variance Globally **
+# ** Plotting Cumulative Variance **
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), pre_to_pre_cumulative_percent_global, label="Pre to Pre", marker="o", color="green")
-plt.plot(range(1, n_components + 1), pre_to_post_cumulative_percent_global, label="Pre to Post", marker="o", color="blue")
-plt.title("Cumulative Variance: Pre Patterns Projected onto Pre and Post PCs (Global)")
+plt.plot(range(1, n_components + 1), pre_to_pre_cumulative_percent, label="Pre to Pre", marker="o", color="green")
+plt.plot(range(1, n_components + 1), pre_to_post_cumulative_percent, label="Pre to Post", marker="o", color="blue")
+plt.title("Cumulative Variance: Pre Patterns Projected onto Pre and Post PCs (Global with Bootstrapping)")
 plt.xlabel("Number of Principal Components")
 plt.ylabel("Cumulative Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
@@ -57,9 +67,9 @@ plt.grid()
 plt.show()
 
 plt.figure(figsize=(12, 6))
-plt.plot(range(1, n_components + 1), post_to_post_cumulative_percent_global, label="Post to Post", marker="o", color="red")
-plt.plot(range(1, n_components + 1), post_to_pre_cumulative_percent_global, label="Post to Pre", marker="o", color="orange")
-plt.title("Cumulative Variance: Post Patterns Projected onto Pre and Post PCs (Global)")
+plt.plot(range(1, n_components + 1), post_to_post_cumulative_percent, label="Post to Post", marker="o", color="red")
+plt.plot(range(1, n_components + 1), post_to_pre_cumulative_percent, label="Post to Pre", marker="o", color="orange")
+plt.title("Cumulative Variance: Post Patterns Projected onto Pre and Post PCs (Global with Bootstrapping)")
 plt.xlabel("Number of Principal Components")
 plt.ylabel("Cumulative Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
@@ -71,7 +81,7 @@ plt.show()
 plt.figure(figsize=(12, 6))
 plt.plot(range(1, n_components + 1), pre_to_pre_var / total_variance_pre * 100, label="Pre to Pre", marker="o", color="green", linestyle='--')
 plt.plot(range(1, n_components + 1), pre_to_post_var / total_variance_pre * 100, label="Pre to Post", marker="o", color="blue", linestyle='--')
-plt.title("Normal Variance: Pre Patterns Projected onto Pre and Post PCs (Global)")
+plt.title("Normal Variance: Pre Patterns Projected onto Pre and Post PCs (Global with Bootstrapping)")
 plt.xlabel("Number of Principal Components")
 plt.ylabel("Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
@@ -82,7 +92,7 @@ plt.show()
 plt.figure(figsize=(12, 6))
 plt.plot(range(1, n_components + 1), post_to_post_var / total_variance_post * 100, label="Post to Post", marker="o", color="red", linestyle='--')
 plt.plot(range(1, n_components + 1), post_to_pre_var / total_variance_post * 100, label="Post to Pre", marker="o", color="orange", linestyle='--')
-plt.title("Normal Variance: Post Patterns Projected onto Pre and Post PCs (Global)")
+plt.title("Normal Variance: Post Patterns Projected onto Pre and Post PCs (Global with Bootstrapping)")
 plt.xlabel("Number of Principal Components")
 plt.ylabel("Variance Explained (%)")
 plt.xticks(range(1, n_components + 1))
