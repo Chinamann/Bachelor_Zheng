@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 
 # Load the data
 pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
-post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108])  # Match dimensions
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy"))  # Match dimensions
 
 # Flatten the data for PCA
 pre_flat = pre.reshape(pre.shape[0], -1)
