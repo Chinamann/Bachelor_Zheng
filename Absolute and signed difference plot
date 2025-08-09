@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Aug  9 17:17:26 2025
+
+@author: zheng
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load data
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Compute the mean across patterns (axis=0)
+pre_avg = np.mean(pre, axis=0)
+post_avg = np.mean(post, axis=0)
+
+# Compute difference maps
+raw_difference = post_avg - pre_avg
+absolute_difference = np.abs(post_avg - pre_avg)
+
+# -------------------------------
+# Plot Set 1: Fixed Threshold (0.05)
+# -------------------------------
+raw_thresh = 0.05
+abs_thresh = 0.05
+
+# Count percentage of changed pixels
+raw_changed_percent = np.sum(np.abs(raw_difference) > raw_thresh) / raw_difference.size * 100
+abs_changed_percent = np.sum(absolute_difference > abs_thresh) / absolute_difference.size * 100
+
+# Plot
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+im0 = axs[0].imshow(raw_difference, cmap='bwr', vmin=-0.1, vmax=0.1)
+axs[0].set_title(f"Raw Difference (±0.05 Threshold)\n↑Red = more activity, ↓Blue = less\nChanged: {raw_changed_percent:.1f}%")
+plt.colorbar(im0, ax=axs[0])
+
+im1 = axs[1].imshow(absolute_difference, cmap='hot', vmin=0, vmax=0.1)
+axs[1].set_title(f"Absolute Difference (0.05 Threshold)\nBrighter = more change\nChanged: {abs_changed_percent:.1f}%")
+plt.colorbar(im1, ax=axs[1])
+plt.suptitle("Fixed Threshold View (0.05)")
+plt.tight_layout()
+plt.show()
+
+# -------------------------------
+# Plot Set 2: Signed Difference with + / - overlay
+# -------------------------------
+fig, ax = plt.subplots(figsize=(7, 6))
+im = ax.imshow(raw_difference, cmap='bwr', vmin=-0.1, vmax=0.1)
+plt.colorbar(im, ax=ax)
+ax.set_title("Signed Difference Map\nRed = Increase, Blue = Decrease")
+
+# Overlay plus/minus signs
+for i in range(raw_difference.shape[0]):
+    for j in range(raw_difference.shape[1]):
+        if raw_difference[i, j] > raw_thresh:
+            ax.text(j, i, '+', ha='center', va='center', color='black', fontsize=6)
+        elif raw_difference[i, j] < -raw_thresh:
+            ax.text(j, i, '–', ha='center', va='center', color='black', fontsize=6)
+
+plt.tight_layout()
+plt.show()
