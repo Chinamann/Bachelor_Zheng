@@ -1,0 +1,64 @@
+"""
+Created on Sun Aug 24 16:43:50 2025
+
+@author: zheng
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load the pre and post arrays
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
+
+# Compute averages across patterns
+pre_avg = np.mean(pre, axis=0)
+post_avg = np.mean(post, axis=0)
+
+# Difference
+diff = post_avg - pre_avg
+
+# Threshold
+threshold = 0.05  
+mask = np.abs(diff) > threshold  # Boolean mask of "changed" areas
+
+# % changed
+changed_percent = np.sum(mask) / diff.size * 100
+
+# Color scales
+vmin = min(pre_avg.min(), post_avg.min())
+vmax = max(pre_avg.max(), post_avg.max())
+diff_max = np.max(np.abs(diff))
+
+# -------------------------------
+# Plot Pre, Post, and Difference + Contours
+# -------------------------------
+fig, axs = plt.subplots(1, 3, figsize=(16, 6))
+
+# Post
+im0 = axs[0].imshow(post_avg, cmap='viridis', vmin=vmin, vmax=vmax)
+axs[0].set_title(
+    f"Summarized Post Data\nYellow = + activity ({vmax:.2f}), Blue = - activity "
+)
+plt.colorbar(im0, ax=axs[0])
+
+# Pre
+im1 = axs[1].imshow(pre_avg, cmap='viridis', vmin=vmin, vmax=vmax)
+axs[1].set_title(
+    f"Summarized Pre Data\nYellow = + activity ({vmax:.2f}), Blue = - activity "
+)
+plt.colorbar(im1, ax=axs[1])
+
+# Difference + contours
+im2 = axs[2].imshow(diff, cmap='bwr', vmin=-diff_max, vmax=diff_max)
+# Overlay contour where |diff| > threshold
+axs[2].contour(mask, colors='k', linewidths=1)
+axs[2].set_title(
+    f"Difference (Post - Pre)\nRed = increase , "
+    f"Blue = decrease \n"
+    f"Changed: {changed_percent:.1f}% (> {threshold})"
+)
+plt.colorbar(im2, ax=axs[2])
+
+plt.tight_layout()
+plt.show()
