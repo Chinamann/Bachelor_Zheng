@@ -1,8 +1,6 @@
 """
 Created on Sun Aug 24 16:43:50 2025
 
-@author: zheng
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,50 +13,61 @@ post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
 pre_avg = np.mean(pre, axis=0)
 post_avg = np.mean(post, axis=0)
 
-# Difference
+# Differences
 diff = post_avg - pre_avg
+abs_diff = np.abs(diff)
 
-# Threshold
+# Threshold for raw difference
 threshold = 0.05  
 mask = np.abs(diff) > threshold  # Boolean mask of "changed" areas
-
-# % changed
 changed_percent = np.sum(mask) / diff.size * 100
+
+# Threshold for absolute difference
+abs_threshold = np.mean(abs_diff) + 2 * np.std(abs_diff)  # example: > mean + 2 std
+mask_abs = abs_diff > abs_threshold
+changed_percent_abs = np.sum(mask_abs) / abs_diff.size * 100
 
 # Color scales
 vmin = min(pre_avg.min(), post_avg.min())
 vmax = max(pre_avg.max(), post_avg.max())
 diff_max = np.max(np.abs(diff))
+abs_max = np.max(abs_diff)
 
 # -------------------------------
-# Plot Pre, Post, and Difference + Contours
+# Plot 1: Summarized Post
 # -------------------------------
-fig, axs = plt.subplots(1, 3, figsize=(16, 6))
-
-# Post
-im0 = axs[0].imshow(post_avg, cmap='viridis', vmin=vmin, vmax=vmax)
-axs[0].set_title(
-    f"Summarized Post Data\nYellow = + activity ({vmax:.2f}), Blue = - activity "
-)
-plt.colorbar(im0, ax=axs[0])
-
-# Pre
-im1 = axs[1].imshow(pre_avg, cmap='viridis', vmin=vmin, vmax=vmax)
-axs[1].set_title(
-    f"Summarized Pre Data\nYellow = + activity ({vmax:.2f}), Blue = - activity "
-)
-plt.colorbar(im1, ax=axs[1])
-
-# Difference + contours
-im2 = axs[2].imshow(diff, cmap='bwr', vmin=-diff_max, vmax=diff_max)
-# Overlay contour where |diff| > threshold
-axs[2].contour(mask, colors='k', linewidths=1)
-axs[2].set_title(
-    f"Difference (Post - Pre)\nRed = increase , "
-    f"Blue = decrease \n"
-    f"Changed: {changed_percent:.1f}% (> {threshold})"
-)
-plt.colorbar(im2, ax=axs[2])
-
-plt.tight_layout()
+plt.figure(figsize=(6, 6))
+im0 = plt.imshow(post_avg, cmap='viridis', vmin=vmin, vmax=vmax)
+plt.title("Summarized Post Data\nYellow = more activity, Blue = less activity\n(Scale shared with Pre)")
+plt.colorbar(im0)
 plt.show()
+
+# -------------------------------
+# Plot 2: Summarized Pre
+# -------------------------------
+plt.figure(figsize=(6, 6))
+im1 = plt.imshow(pre_avg, cmap='viridis', vmin=vmin, vmax=vmax)
+plt.title("Summarized Pre Data\nYellow = more activity, Blue = less activity\n(Scale shared with Post)")
+plt.colorbar(im1)
+plt.show()
+
+# -------------------------------
+# Plot 3: Raw Difference
+# -------------------------------
+plt.figure(figsize=(6, 6))
+im2 = plt.imshow(diff, cmap='bwr', vmin=-diff_max, vmax=diff_max)
+plt.contour(mask, colors='k', linewidths=1)
+plt.title(f"Raw Difference (Post - Pre)\nRed = increase, Blue = decrease\nChanged: {changed_percent:.1f}% (> {threshold})")
+plt.colorbar(im2)
+plt.show()
+
+# -------------------------------
+# Plot 4: Absolute Difference
+# -------------------------------
+plt.figure(figsize=(6, 6))
+im3 = plt.imshow(abs_diff, cmap='hot', vmin=0, vmax=abs_max)
+plt.contour(mask_abs, colors='k', linewidths=1)
+plt.title(f"Absolute Difference (|Post - Pre|)\nBrighter = stronger change\nChanged: {changed_percent_abs:.1f}% (> mean+2std)")
+plt.colorbar(im3)
+plt.show()
+
