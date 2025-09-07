@@ -1,20 +1,36 @@
-Pre data PCA result (first 13 components):
-# Each row represents a sample of my Pre and Post data set. 
-#Each column represents a PC ranging from 1 to 13, So we can see the Principal components score (About how much each sample goes into which PC (cocktail reference))
+import numpy as np
+from sklearn.decomposition import PCA
 
-[[ -3.67110136  -2.76876431  -1.12634345 ...  -5.11583593  -1.66638023 -0.58498204]
- [  4.12203806  -5.68904089 -13.56993512 ...   2.71322894   0.29111745 0.31231004]
- [ -4.06145239  -0.88530866  -5.12573965 ...  -0.77153741  -2.00229721  0.31054971]
- ...
- [ -1.49116011   0.20169295  -5.19360596 ...   0.397712    -0.86402564 0.81846131]
- [ -4.61960604  -1.81123796  -6.24375006 ...  -1.18528732  -0.50512554  0.39433714]
- [ -4.23958234  -1.17679627   1.47053438 ...  -2.89284407   1.92559096 0.67431651]]
+# ---------------------------
+# Load data
+# ---------------------------
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")
 
-Post data PCA result (first 13 components): 
-[[  7.44079287   4.26037742  -6.17078727 ...   5.28363596  -1.7706889  0.51744255]
- [ 15.0476969  -18.95861399  12.10170313 ...  -0.5537877    3.39680697  -2.67931144]
- [ 17.8245529  -12.52860474  18.08194703 ...   7.57760909   7.26932058  -0.26979281]
- ...
- [  4.23743523  -1.96859613  -0.57136332 ...  -2.66114338   0.90725891 -0.83761549]
- [  2.05918195  -2.34273799  -1.98560422 ...  -1.2751416    0.27658442 -1.48162226]
- [ -5.31384616  -0.33755187  -4.10950777 ...   4.29147005  -2.4519182 -4.2009959 ]]
+# Match number of slices (optional: keep same length for comparison)
+post = post[:pre.shape[0]]
+
+# ---------------------------
+# Flatten each slice for PCA
+# ---------------------------
+pre_flat = np.nan_to_num(pre).reshape(pre.shape[0], -1)   # (n_slices, n_pixels)
+post_flat = np.nan_to_num(post).reshape(post.shape[0], -1)
+
+# ---------------------------
+# PCA transformation
+# ---------------------------
+n_components = 5
+pca_pre = PCA(n_components=n_components)
+pre_pca_result = pca_pre.fit_transform(pre_flat)
+
+pca_post = PCA(n_components=n_components)
+post_pca_result = pca_post.fit_transform(post_flat)
+
+# ---------------------------
+# Print PCA results (abbreviated)
+# ---------------------------
+print("Pre data PCA result (first 13 components):")
+print(pre_pca_result)
+
+print("\nPost data PCA result (first 13 components):")
+print(post_pca_result)
