@@ -1,0 +1,45 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+from scipy.stats import pearsonr
+
+# ---------------------------
+# Load and flatten data
+# ---------------------------
+pre = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy")
+post = np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108]
+
+pre_flat = np.nan_to_num(pre).reshape(pre.shape[0], -1)
+post_flat = np.nan_to_num(post).reshape(post.shape[0], -1)
+
+# ---------------------------
+# PCA (first 5 components)
+# ---------------------------
+n_components = 13
+pca_pre = PCA(n_components=n_components).fit(pre_flat)
+pca_post = PCA(n_components=n_components).fit(post_flat)
+
+# Each row = PC weights across pixels
+pre_maps  = pca_pre.components_
+post_maps = pca_post.components_
+
+# ---------------------------
+# Pearson r between every Pre–Post pair
+# ---------------------------
+r_matrix = np.zeros((n_components, n_components))
+for i in range(n_components):
+    for j in range(n_components):
+        r_matrix[i, j], _ = pearsonr(pre_maps[i], post_maps[j])
+
+# ---------------------------
+# Heatmap
+# ---------------------------
+plt.figure(figsize=(6, 5))
+sns.heatmap(r_matrix, annot=True, fmt=".2f", cmap="coolwarm",
+            xticklabels=[f"Post PC{j+1}" for j in range(n_components)],
+            yticklabels=[f"Pre PC{i+1}"  for i in range(n_components)])
+plt.title("Pearson r: Spatial Similarity of Pre vs Post PCs")
+plt.tight_layout()
+plt.show()
