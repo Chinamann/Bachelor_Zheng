@@ -1,0 +1,67 @@
+import numpy as np
+from sklearn.decomposition import PCA
+from scipy.stats import mannwhitneyu
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ---------------------------
+# 1. Load and preprocess data
+# ---------------------------
+np.random.seed(42)  # ensures reproducible bootstraps
+
+pre = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_pre.npy"))
+post = np.nan_to_num(np.load("C:/Users/zheng/OneDrive/Desktop/Bachelor/F0254/events_post.npy")[:108])  # match dimensions
+
+# Flatten spatial dimensions for PCA
+pre_flat = pre.reshape(pre.shape[0], -1)
+post_flat = post.reshape(post.shape[0], -1)
+
+# ------------------------------------
+# 2. Define helper functions
+# ------------------------------------
+def calculate_effective_dimensionality(variances):
+    """Compute effective dimensionality from PCA variances."""
+    return (np.sum(variances) ** 2) / np.sum(variances ** 2)
+
+def bootstrap_dimensionality(data, n_samples=100):
+    """Randomly sample patterns, compute PCA, and return effective dimensionality."""
+    sample_data = data[np.random.choice(data.shape[0], size=n_samples, replace=True)]
+    pca = PCA()
+    pca.fit(sample_data)
+    return calculate_effective_dimensionality(pca.explained_variance_)
+
+# ------------------------------------
+# 3. Run bootstrapping
+# ------------------------------------
+n_iterations = 100
+n_samples = 100
+
+dimensionalities_pre = [bootstrap_dimensionality(pre_flat, n_samples) for _ in range(n_iterations)]
+dimensionalities_post = [bootstrap_dimensionality(post_flat, n_samples) for _ in range(n_iterations)]
+
+# ------------------------------------
+# 4. Mann–Whitney U test
+# ------------------------------------
+u_stat, p_mw = mannwhitneyu(dimensionalities_pre, dimensionalities_post)
+
+print(f"Mann–Whitney U statistic: {u_stat:.3f}")
+print(f"P-value: {p_mw:.4f}")
+
+if p_mw < 0.05:
+    print("→ Significant difference between Pre and Post dimensionalities (p < 0.05)")
+else:
+    print("→ No significant difference between Pre and Post dimensionalities (p ≥ 0.05)")
+
+# ------------------------------------
+# 5. Visualization
+# ------------------------------------
+sns.set(style="whitegrid", font_scale=1.2)
+sns.histplot(dimensionalities_pre, color='royalblue', label='Pre Data', kde=True, stat='density', alpha=0.6)
+sns.histplot(dimensionalities_post, color='orange', label='Post Data', kde=True, stat='density', alpha=0.6)
+
+plt.title("Bootstrapped Effective Dimensionalities", fontsize=14)
+plt.xlabel("Effective Dimensionality", fontsize=12)
+plt.ylabel("Density", fontsize=12)
+plt.legend()
+plt.tight_layout()
+plt.show()
